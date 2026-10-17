@@ -4,6 +4,7 @@ import Calendar from "lucide-react/dist/esm/icons/calendar";
 import MapPin from "lucide-react/dist/esm/icons/map-pin";
 import Users from "lucide-react/dist/esm/icons/users";
 import { useParams } from "react-router-dom";
+import { EventActions } from "@/components/events/EventActions";
 import { EventStatusBadge } from "@/components/events/EventStatusBadge";
 import { SessionList } from "@/components/sessions/SessionList";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -87,11 +88,13 @@ export default function EventDetailPage() {
             <Users className="h-4 w-4 shrink-0" aria-hidden="true" />
             Cupo: {eventQuery.data.capacity}
           </p>
-          {/* Registro de asistentes y botones de gestión (editar/publicar/
-             cancelar/finalizar) llegan en Fase 4/6 — placeholder visual only. */}
+          {/* Botones de gestión (editar/publicar/cancelar/finalizar/borrar):
+             EventActions se auto-protege con isOwnerOrAdmin, así que se
+             monta incondicionalmente. El registro de asistentes llega en
+             Fase 6 — se deja el placeholder tal como en Fase 3. */}
+          <EventActions event={eventQuery.data} />
           <p className="text-sm italic text-gray-500">
-            El registro de asistentes y la gestión de este evento estarán disponibles
-            próximamente.
+            El registro de asistentes a este evento estará disponible próximamente.
           </p>
         </section>
       ) : null}
