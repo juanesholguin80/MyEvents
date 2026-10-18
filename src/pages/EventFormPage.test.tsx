@@ -4,6 +4,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it } from "vitest";
+import { axe } from "vitest-axe";
 import { Toaster } from "@/components/ui/Toaster";
 import { useAuthStore } from "@/features/auth/store";
 import EventFormPage from "@/pages/EventFormPage";
@@ -100,6 +101,12 @@ describe("EventFormPage — modo crear", () => {
     // No navegó: el formulario de creación sigue en pantalla.
     expect(screen.queryByText("Detalle del evento")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /crear evento/i })).toBeInTheDocument();
+  });
+
+  it("has no detectable accessibility violations in create mode", async () => {
+    const { container } = renderEventFormPage(["/events/new"]);
+    await screen.findByRole("button", { name: /crear evento/i });
+    expect(await axe(container)).toHaveNoViolations();
   });
 });
 

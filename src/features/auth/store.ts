@@ -69,7 +69,13 @@ if (typeof window !== "undefined") {
       persisted?.state?.accessToken && persisted?.state?.user,
     );
     if (!stillAuthenticated) {
-      useAuthStore.getState().logout();
+      // Usa clearSession() (no logout() directo) para que esta pestaña
+      // también limpie la caché de TanStack Query: sin esto, datos
+      // privados ya cacheados (GET /me, listados de admin, drafts del
+      // organizador) seguían visibles en memoria en esta pestaña tras un
+      // logout disparado en otra pestaña, igual que el motivo documentado
+      // en §2.5 punto 5 del plan para el logout local.
+      clearSession();
     }
   });
 }

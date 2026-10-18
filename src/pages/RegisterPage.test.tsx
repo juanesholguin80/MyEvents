@@ -3,6 +3,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it } from "vitest";
+import { axe } from "vitest-axe";
 import { Toaster } from "@/components/ui/Toaster";
 import RegisterPage from "@/pages/RegisterPage";
 import { resetDb } from "@/test/msw/handlers";
@@ -42,5 +43,10 @@ describe("RegisterPage", () => {
       expect(screen.getByText(/ya existe una cuenta/i)).toBeInTheDocument(),
     );
     expect(screen.queryByText("Login")).not.toBeInTheDocument();
+  });
+
+  it("has no detectable accessibility violations", async () => {
+    const { container } = renderRegisterPage();
+    expect(await axe(container)).toHaveNoViolations();
   });
 });

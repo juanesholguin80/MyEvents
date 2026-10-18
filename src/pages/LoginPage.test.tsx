@@ -4,6 +4,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it } from "vitest";
+import { axe } from "vitest-axe";
 import { Toaster } from "@/components/ui/Toaster";
 import { useAuthStore } from "@/features/auth/store";
 import LoginPage from "@/pages/LoginPage";
@@ -80,5 +81,10 @@ describe("LoginPage", () => {
     expect(useAuthStore.getState().isAuthenticated).toBe(false);
     expect(useAuthStore.getState().accessToken).toBeNull();
     expect(useAuthStore.getState().user).toBeNull();
+  });
+
+  it("has no detectable accessibility violations", async () => {
+    const { container } = renderLoginPage();
+    expect(await axe(container)).toHaveNoViolations();
   });
 });

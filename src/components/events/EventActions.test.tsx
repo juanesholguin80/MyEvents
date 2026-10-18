@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { http as mswHttp, HttpResponse } from "msw";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it } from "vitest";
 import { EventActions } from "@/components/events/EventActions";
 import { Toaster } from "@/components/ui/Toaster";
@@ -50,6 +50,25 @@ function renderActions(event: EventRead, { withToaster = false } = {}) {
       <MemoryRouter>
         {withToaster ? <Toaster /> : null}
         <EventActions event={event} />
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
+}
+
+// Variante con router real (Routes) para los casos que necesitan verificar
+// la navegación tras borrar (handleConfirm -> navigate("/")).
+function renderActionsWithRouting(event: EventRead) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={[`/events/${event.id}`]}>
+        <Toaster />
+        <Routes>
+          <Route path="/events/:id" element={<EventActions event={event} />} />
+          <Route path="/" element={<div>Listado de eventos</div>} />
+        </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
   );
@@ -147,5 +166,122 @@ describe("EventActions", () => {
     expect(
       await screen.findByText(/el evento no se puede modificar en su estado actual/i),
     ).toBeInTheDocument();
+  });
+
+  it("muestra solo 'Publicar' para un evento en borrador, del dueño", () => {
+    useAuthStore.setState({
+      user: ORGANIZER_OWNER,
+      accessToken: "access-2",
+      refreshToken: "refresh-2",
+      isAuthenticated: true,
+    });
+
+    renderActions({ ...PUBLISHED_EVENT, status: "draft" });
+
+    expect(screen.getByRole("button", { name: "Publicar" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Cancelar evento" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Finalizar evento" })).not.toBeInTheDocument();
+    // Un evento en borrador no es terminal: sigue mostrando Editar/Borrar.
+    expect(screen.getByRole("link", { name: "Editar" })).toBeInTheDocument();
+  });
+
+  it("publica un evento feliz (happy path de transición) y muestra el toast de éxito", async () => {
+    useAuthStore.setState({
+      user: ORGANIZER_OWNER,
+      accessToken: "access-2",
+      refreshToken: "refresh-2",
+      isAuthenticated: true,
+    });
+
+    // id 2 es "Taller Privado" en el seed de MSW: realmente está en draft
+    // (a diferencia de simplemente mutar localmente el status de
+    // PUBLISHED_EVENT, cuyo id=1 SIGUE publicado en la base simulada y
+    // haría que el PATCH /publish real devolviera 409).
+    const user = userEvent.setup();
+    renderActions(
+      { ...PUBLISHED_EVENT, id: 2, status: "draft", name: "Taller Privado" },
+      { withToaster: true },
+    );
+
+    await user.click(screen.getByRole("button", { name: "Publicar" }));
+    expect(screen.getByText("¿Publicar este evento?")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Confirmar" }));
+
+    expect(
+      await screen.findByText("El estado del evento se actualizó."),
+    ).toBeInTheDocument();
+  });
+
+  it("cierra el modal de confirmación sin disparar ninguna mutación si se hace click en 'Cancelar'", async () => {
+    let cancelCalls = 0;
+    server.use(
+      mswHttp.patch("/api/v1/events/:id/cancel", () => {
+        cancelCalls += 1;
+        return HttpResponse.json({ ...PUBLISHED_EVENT, status: "cancelled" });
+      }),
+    );
+    useAuthStore.setState({
+      user: ORGANIZER_OWNER,
+      accessToken: "access-2",
+      refreshToken: "refresh-2",
+      isAuthenticated: true,
+    });
+
+    const user = userEvent.setup();
+    renderActions(PUBLISHED_EVENT, { withToaster: true });
+
+    await user.click(screen.getByRole("button", { name: "Cancelar evento" }));
+    expect(screen.getByText("¿Cancelar este evento?")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Cancelar" }));
+
+    expect(screen.queryByText("¿Cancelar este evento?")).not.toBeInTheDocument();
+    expect(cancelCalls).toBe(0);
+  });
+
+  it("borra un evento feliz y navega al listado", async () => {
+    useAuthStore.setState({
+      user: ORGANIZER_OWNER,
+      accessToken: "access-2",
+      refreshToken: "refresh-2",
+      isAuthenticated: true,
+    });
+
+    const user = userEvent.setup();
+    renderActionsWithRouting(PUBLISHED_EVENT);
+
+    await user.click(screen.getByRole("button", { name: /borrar/i }));
+    expect(screen.getByText("¿Eliminar este evento?")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Confirmar" }));
+
+    expect(await screen.findByText("Evento eliminado.")).toBeInTheDocument();
+    expect(await screen.findByText("Listado de eventos")).toBeInTheDocument();
+  });
+
+  it("muestra un toast de error y cierra el modal si borrar falla (403)", async () => {
+    server.use(
+      mswHttp.delete("/api/v1/events/:id", () =>
+        HttpResponse.json(
+          { detail: "No tienes permisos sobre este evento.", code: "EVENT_FORBIDDEN", fields: null },
+          { status: 403 },
+        ),
+      ),
+    );
+    useAuthStore.setState({
+      user: ORGANIZER_OWNER,
+      accessToken: "access-2",
+      refreshToken: "refresh-2",
+      isAuthenticated: true,
+    });
+
+    const user = userEvent.setup();
+    renderActions(PUBLISHED_EVENT, { withToaster: true });
+
+    await user.click(screen.getByRole("button", { name: /borrar/i }));
+    await user.click(screen.getByRole("button", { name: "Confirmar" }));
+
+    expect(
+      await screen.findByText(/no tienes permisos sobre este evento/i),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("¿Eliminar este evento?")).not.toBeInTheDocument();
   });
 });

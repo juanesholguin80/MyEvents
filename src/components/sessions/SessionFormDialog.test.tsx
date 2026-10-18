@@ -3,6 +3,7 @@ import { http as mswHttp, HttpResponse } from "msw";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { axe } from "vitest-axe";
 import { SessionFormDialog } from "@/components/sessions/SessionFormDialog";
 import { Toaster } from "@/components/ui/Toaster";
 import { useAuthStore } from "@/features/auth/store";
@@ -52,13 +53,13 @@ function renderDialog(onOpenChange = vi.fn()) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  render(
+  const { baseElement } = render(
     <QueryClientProvider client={queryClient}>
       <Toaster />
       <SessionFormDialog mode="create" event={EVENT} open onOpenChange={onOpenChange} />
     </QueryClientProvider>,
   );
-  return { onOpenChange };
+  return { onOpenChange, baseElement };
 }
 
 async function selectSpeaker(user: ReturnType<typeof userEvent.setup>, name: string) {
@@ -169,5 +170,14 @@ describe("SessionFormDialog", () => {
     expect(
       await screen.findByText(/los datos de la sesión no son válidos/i),
     ).toBeInTheDocument();
+  });
+
+  it("has no detectable accessibility violations", async () => {
+    // Se verifica sobre baseElement (document.body), no sobre container:
+    // el contenido del diálogo de Radix se renderiza en un portal fuera
+    // del nodo donde React Testing Library monta el árbol.
+    const { baseElement } = renderDialog();
+    await screen.findByLabelText("Título");
+    expect(await axe(baseElement)).toHaveNoViolations();
   });
 });

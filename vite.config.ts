@@ -26,6 +26,11 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],
+      // src/test/msw/* es infraestructura de pruebas (servidor MSW +
+      // handlers que simulan el backend), no lógica de la aplicación —
+      // se excluye del umbral de cobertura por el mismo motivo por el que
+      // los fixtures/conftest del backend no cuentan contra su cobertura.
+      exclude: ["src/test/**"],
     },
   },
 });
