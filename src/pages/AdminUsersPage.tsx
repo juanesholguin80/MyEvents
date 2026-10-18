@@ -87,63 +87,69 @@ export default function AdminUsersPage() {
 
       {hasUsers ? (
         <>
-          <table className="w-full table-auto border-collapse text-left text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 text-gray-500">
-                <th scope="col" className="py-2 pr-4 font-medium">
-                  Nombre
-                </th>
-                <th scope="col" className="py-2 pr-4 font-medium">
-                  Correo
-                </th>
-                <th scope="col" className="py-2 pr-4 font-medium">
-                  Rol
-                </th>
-                <th scope="col" className="py-2 pr-4 font-medium">
-                  Estado
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((user) => {
-                const selfRow = isSelfRow(user);
-                const rowDisabled = selfRow || isRowPending(user);
+          {/* Fase 9 (pasada de responsividad): la tabla de 4 columnas no
+             cabe en un viewport móvil — en vez de recortarla o forzarla a
+             achicarse, se permite scroll horizontal contenido dentro de
+             este wrapper (el resto de la página no se desborda). */}
+          <div className="overflow-x-auto">
+            <table className="w-full table-auto border-collapse text-left text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 text-gray-500">
+                  <th scope="col" className="py-2 pr-4 font-medium">
+                    Nombre
+                  </th>
+                  <th scope="col" className="py-2 pr-4 font-medium">
+                    Correo
+                  </th>
+                  <th scope="col" className="py-2 pr-4 font-medium">
+                    Rol
+                  </th>
+                  <th scope="col" className="py-2 pr-4 font-medium">
+                    Estado
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((user) => {
+                  const selfRow = isSelfRow(user);
+                  const rowDisabled = selfRow || isRowPending(user);
 
-                return (
-                  <tr key={user.id} className="border-b border-gray-100">
-                    <td className="py-2 pr-4 text-gray-900">
-                      {user.full_name}
-                      {selfRow ? (
-                        <span className="ml-2 rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-600">
-                          Tú
-                        </span>
-                      ) : null}
-                    </td>
-                    <td className="py-2 pr-4 text-gray-600">{user.email}</td>
-                    <td className="py-2 pr-4">
-                      <Select
-                        value={user.role}
-                        onValueChange={(value) => handleRoleChange(user, value as Role)}
-                        options={ROLE_OPTIONS}
-                        disabled={rowDisabled}
-                        aria-label={`Rol de ${user.full_name}`}
-                      />
-                    </td>
-                    <td className="py-2 pr-4">
-                      <Button
-                        variant={user.is_active ? "secondary" : "danger"}
-                        size="sm"
-                        disabled={rowDisabled}
-                        onClick={() => handleToggleActive(user)}
-                      >
-                        {user.is_active ? "Activo" : "Inactivo"}
-                      </Button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                  return (
+                    <tr key={user.id} className="border-b border-gray-100">
+                      <td className="py-2 pr-4 text-gray-900">
+                        {user.full_name}
+                        {selfRow ? (
+                          <span className="ml-2 rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-600">
+                            Tú
+                          </span>
+                        ) : null}
+                      </td>
+                      <td className="py-2 pr-4 text-gray-600">{user.email}</td>
+                      <td className="py-2 pr-4">
+                        <Select
+                          value={user.role}
+                          onValueChange={(value) => handleRoleChange(user, value as Role)}
+                          options={ROLE_OPTIONS}
+                          disabled={rowDisabled}
+                          aria-label={`Rol de ${user.full_name}`}
+                        />
+                      </td>
+                      <td className="py-2 pr-4">
+                        <Button
+                          variant={user.is_active ? "secondary" : "danger"}
+                          size="sm"
+                          disabled={rowDisabled}
+                          onClick={() => handleToggleActive(user)}
+                        >
+                          {user.is_active ? "Activo" : "Inactivo"}
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
           <Pagination
             page={usersQuery.data!.page}
             pageSize={usersQuery.data!.page_size}

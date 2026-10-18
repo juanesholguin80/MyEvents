@@ -8,11 +8,15 @@ export function Navbar() {
   const fullName = useAuthStore((s) => s.user?.full_name);
 
   return (
-    <nav className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+    // Fase 9 (pasada de responsividad): sin `flex-wrap`, en móvil (varios
+    // enlaces condicionales + el nombre completo del usuario) este nav se
+    // desbordaba horizontalmente — con `flex-wrap` los enlaces pasan a una
+    // segunda línea en vez de recortarse o generar scroll horizontal.
+    <nav className="flex flex-wrap items-center justify-between gap-y-2 border-b border-gray-200 px-4 py-3">
       <Link to="/" className="text-lg font-semibold text-gray-900">
         Mis Eventos
       </Link>
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 sm:gap-x-4">
         {isAuthenticated && (role === "organizador" || role === "admin") ? (
           <Link
             to="/events/new"
@@ -33,7 +37,7 @@ export function Navbar() {
           <>
             <Link
               to="/profile"
-              className="text-sm font-medium text-gray-700 hover:text-indigo-600"
+              className="max-w-[9rem] truncate text-sm font-medium text-gray-700 hover:text-indigo-600 sm:max-w-none"
             >
               {fullName}
             </Link>

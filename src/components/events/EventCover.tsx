@@ -1,4 +1,10 @@
 import { useMemo } from "react";
+import cover1Fallback from "@/assets/covers/cover-1.svg?w=640&format=webp";
+import cover1Srcset from "@/assets/covers/cover-1.svg?w=320;640;960&format=webp&as=srcset";
+import cover2Fallback from "@/assets/covers/cover-2.svg?w=640&format=webp";
+import cover2Srcset from "@/assets/covers/cover-2.svg?w=320;640;960&format=webp&as=srcset";
+import cover3Fallback from "@/assets/covers/cover-3.svg?w=640&format=webp";
+import cover3Srcset from "@/assets/covers/cover-3.svg?w=320;640;960&format=webp&as=srcset";
 import { cn } from "@/lib/cn";
 
 interface EventCoverProps {
@@ -6,37 +12,51 @@ interface EventCoverProps {
   className?: string;
 }
 
-// Paleta fija de degradados — el índice se deriva de event.id, así que el
-// mismo evento siempre muestra el mismo degradado (determinístico).
-const GRADIENT_PALETTE: ReadonlyArray<readonly [string, string]> = [
-  ["#6366f1", "#8b5cf6"],
-  ["#06b6d4", "#3b82f6"],
-  ["#f59e0b", "#ef4444"],
-  ["#10b981", "#059669"],
-  ["#ec4899", "#f43f5e"],
-  ["#8b5cf6", "#d946ef"],
+interface CoverVariant {
+  srcset: string;
+  fallback: string;
+}
+
+// Las 3 portadas (ver §0 del plan: el backend no tiene campo de imagen en
+// `Event`, así que no se inventa un endpoint de upload) se generan en build
+// time por `vite-imagetools` a partir de los SVG decorativos de
+// src/assets/covers/*.svg -> WebP + 3 anchos (320w/640w/960w). El índice se
+// deriva de `event.id`, así que el mismo evento siempre muestra la misma
+// portada (determinístico).
+const COVER_VARIANTS: readonly CoverVariant[] = [
+  { srcset: cover1Srcset, fallback: cover1Fallback },
+  { srcset: cover2Srcset, fallback: cover2Fallback },
+  { srcset: cover3Srcset, fallback: cover3Fallback },
 ];
 
 /**
- * Portada decorativa y determinística por evento (ver §0 del plan: el
- * backend no tiene campo de imagen en `Event`, así que no se inventa un
- * endpoint de upload). `vite-imagetools` está instalado en el proyecto, pero
- * generar el set real de placeholders en WebP + srcset es trabajo explícito
- * de Fase 9 — aquí se usa un degradado CSS simple para no adelantar ese
- * alcance. Si en el futuro el backend agrega `Event.cover_image_url`, este
+ * Portada decorativa y puramente presentacional (sin fetch). Usa
+ * `<picture>`/`srcset` + `loading="lazy"`/`decoding="async"` para no
+ * bloquear el render ni descargar más bytes de los que el viewport
+ * necesita. Si en el futuro el backend agrega `Event.cover_image_url`, este
  * componente es el único punto de cambio.
  */
 export function EventCover({ eventId, className }: EventCoverProps) {
-  const [from, to] = useMemo(
-    () => GRADIENT_PALETTE[eventId % GRADIENT_PALETTE.length],
+  const variant = useMemo(
+    () => COVER_VARIANTS[eventId % COVER_VARIANTS.length],
     [eventId],
   );
 
   return (
-    <div
-      aria-hidden="true"
-      className={cn("h-32 w-full rounded-md", className)}
-      style={{ backgroundImage: `linear-gradient(135deg, ${from}, ${to})` }}
-    />
+    <picture>
+      <source
+        type="image/webp"
+        srcSet={variant.srcset}
+        sizes="(min-width: 1024px) 320px, 100vw"
+      />
+      <img
+        src={variant.fallback}
+        alt=""
+        aria-hidden="true"
+        loading="lazy"
+        decoding="async"
+        className={cn("h-32 w-full rounded-md object-cover", className)}
+      />
+    </picture>
   );
 }
