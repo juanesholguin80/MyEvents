@@ -1,3 +1,14 @@
+# Docker Compose único del repositorio: orquesta los servicios pedidos por
+# el enunciado (base de datos, backend y frontend) con un solo comando desde
+# la raíz del repo. Ver README.md para el detalle de uso.
+#
+#   docker compose up --build
+#
+# Para levantar solo backend + db (sin frontend), útil durante desarrollo
+# del backend:
+#
+#   docker compose up --build backend db
+#
 services:
   db:
     image: postgres:16
@@ -17,6 +28,8 @@ services:
       retries: 5
       start_period: 5s
 
+  # Base de datos aislada para la suite de tests del backend (pytest). No es
+  # necesaria para levantar la aplicación; ver backend/README.md.
   db_test:
     image: postgres:16
     restart: unless-stopped
@@ -37,7 +50,7 @@ services:
 
   backend:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
     restart: unless-stopped
     environment:
@@ -49,10 +62,23 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./app:/app/app
-      - ./alembic:/app/alembic
+      - ./backend/app:/app/app
+      - ./backend/alembic:/app/alembic
     depends_on:
       db:
+        condition: service_healthy
+    # El healthcheck se toma del HEALTHCHECK definido en backend/Dockerfile
+    # (contra GET /health); "frontend" depende de esta condición más abajo.
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
         condition: service_healthy
 
 volumes:

@@ -14,24 +14,26 @@ API REST para gestión de eventos ("Mis Eventos"), construida con FastAPI. Prueb
 
 ## Requisitos previos
 
-- Docker y Docker Compose (forma recomendada de levantar todo el stack: API + Postgres).
+- Docker y Docker Compose (forma recomendada de levantar la API + Postgres).
 - Python 3.12+ y Poetry — solo necesarios si vas a correr el backend o los tests **fuera** de Docker, directo en el host.
+
+> El `docker-compose.yml` vive en la **raíz del repositorio** (no dentro de `backend/`), porque orquesta backend, frontend y base de datos juntos — ver el [README raíz](../README.md). Los comandos de esta sección se ejecutan desde ahí.
 
 ## Setup
 
 1. Copia el archivo de variables de entorno y ajusta los valores si lo necesitas (los defaults ya funcionan para desarrollo local):
 
    ```bash
-   cp .env.example .env
+   cp backend/.env.example backend/.env
    ```
 
-2. Levanta el stack completo (API + Postgres):
+2. Levanta solo lo necesario para el backend (API + Postgres), desde la raíz del repo:
 
    ```bash
-   docker-compose up --build
+   docker compose up --build backend db
    ```
 
-   Esto levanta tres servicios: `backend` (puerto `8000`), `db` (Postgres, puerto `5432`, para desarrollo) y `db_test` (Postgres, puerto `5433`, solo para la suite de tests — ver [Tests](#tests-y-cobertura)). El `backend` espera a que `db` esté `healthy` antes de arrancar, y su `CMD` corre `alembic upgrade head` automáticamente antes de iniciar `uvicorn` — no se necesita ningún paso manual de migración contra una base nueva.
+   Esto levanta `backend` (puerto `8000`) y `db` (Postgres, puerto `5432`, para desarrollo); `db_test` (puerto `5433`) es un tercer servicio definido en el mismo compose, usado solo por la suite de tests — ver [Tests](#tests-y-cobertura). El `backend` espera a que `db` esté `healthy` antes de arrancar, y su `CMD` corre `alembic upgrade head` automáticamente antes de iniciar `uvicorn` — no se necesita ningún paso manual de migración contra una base nueva.
 
 3. Verifica que la API responde:
 
@@ -82,12 +84,13 @@ poetry run alembic revision --autogenerate -m "descripcion"
 
 ## Tests y cobertura
 
-Los tests corren contra una base de datos Postgres real y **separada** de la de desarrollo: el servicio `db_test` de `docker-compose.yml` (puerto `5433`, almacenamiento `tmpfs` — se descarta al apagar el contenedor). Esto evita mezclar datos de test con los ~40+ registros acumulados manualmente en la base de desarrollo durante la implementación.
+Los tests corren contra una base de datos Postgres real y **separada** de la de desarrollo: el servicio `db_test` del `docker-compose.yml` de la raíz del repo (puerto `5433`, almacenamiento `tmpfs` — se descarta al apagar el contenedor). Esto evita mezclar datos de test con los ~40+ registros acumulados manualmente en la base de desarrollo durante la implementación.
 
 ```bash
-# Levanta solo la base de test si no está corriendo
+# Desde la raíz del repo: levanta solo la base de test si no está corriendo
 docker compose up -d db_test
 
+# Desde backend/:
 poetry run pytest
 ```
 
@@ -167,7 +170,7 @@ tests/
 
 - [x] Repositorio con `backend/` separado y README propio (este archivo).
 - [x] Documentación API vía Swagger/OpenAPI (`/docs`, `/redoc`).
-- [x] Dockerfile backend + `docker-compose.yml` orquestando backend y base de datos.
+- [x] Dockerfile backend + `docker-compose.yml` (en la raíz del repo) orquestando backend, frontend y base de datos.
 - [x] Tests unitarios (pytest) + reporte de cobertura (143 tests, 99% de cobertura).
 - [x] CRUD de eventos con búsqueda por nombre/parte del nombre, estados y validaciones de negocio.
 - [x] Registro/login de usuarios, rutas protegidas (JWT access + refresh).

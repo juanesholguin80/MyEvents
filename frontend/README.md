@@ -25,7 +25,7 @@ mis-eventos/        (raíz del repo)
 └── frontend/         # este proyecto
 ```
 
-El `docker-compose.yml` de esta carpeta y el proxy de desarrollo de Vite asumen justamente esa estructura (`backend/` y `frontend/` como carpetas hermanas dentro del mismo repo) — no se necesita clonar nada por separado.
+El `docker-compose.yml` que orquesta todo el stack vive en la **raíz del repositorio** (no dentro de esta carpeta ni de `backend/`), precisamente porque necesita construir ambas imágenes a partir de esa estructura de carpetas hermanas — ver el [README raíz](../README.md). El proxy de desarrollo de Vite (`vite.config.ts`) asume igualmente que el backend corre accesible en `localhost:8000`, sin depender de dónde viva el compose.
 
 ## Requisitos previos
 
@@ -106,20 +106,20 @@ El frontend se empaqueta con un `Dockerfile` multi-stage:
 
 ### Levantar el stack completo (backend + frontend + base de datos)
 
-Existe un `docker-compose.yml` dentro de esta carpeta que orquesta los tres servicios pedidos por el enunciado (base de datos, backend y frontend) en un solo comando. Es el compose recomendado para levantar la aplicación completa — ver también el [README raíz](../README.md):
+El `docker-compose.yml` que orquesta los tres servicios pedidos por el enunciado (base de datos, backend y frontend) en un solo comando vive en la **raíz del repositorio**, no dentro de esta carpeta — ver el [README raíz](../README.md) para el detalle completo:
 
 ```bash
-# desde frontend/
+# desde la raíz del repo
 docker compose up --build
 ```
 
 Esto levanta:
 
-- `db` (Postgres 16), reutilizando la misma definición ya verificada del `docker-compose.yml` propio de `backend/` (mismas variables de entorno, mismo healthcheck vía `pg_isready`).
-- `backend`, construido con contexto `../backend` (un nivel arriba) usando el `Dockerfile` ya existente de esa carpeta — solo se **lee** para construir la imagen, no se modifica ni se copia nada hacia `frontend/` —, con un healthcheck propio definido en este compose contra `GET /health` (ya expuesto por el backend sin el prefijo `/api/v1`).
-- `frontend` (esta carpeta, contexto `.`), construido con el `Dockerfile` descrito arriba, expuesto en el puerto `80`, que solo arranca una vez que `backend` reporta estar saludable (`depends_on: backend: condition: service_healthy`).
+- `db` (Postgres 16).
+- `backend`, construido con contexto `./backend` usando el `Dockerfile` de esa carpeta, con el healthcheck definido en su propio `Dockerfile` contra `GET /health` (ya expuesto por el backend sin el prefijo `/api/v1`).
+- `frontend` (esta carpeta, contexto `./frontend`), construido con el `Dockerfile` descrito arriba, expuesto en el puerto `80`, que solo arranca una vez que `backend` reporta estar saludable (`depends_on: backend: condition: service_healthy`).
 
-Con el stack arriba, la aplicación completa queda disponible en `http://localhost`. El `docker-compose.yml` propio de `backend/` (que además incluye un servicio `db_test` para el flujo de tests aislado del backend) se mantiene intacto y sigue siendo el que se usa para desarrollar/testear el backend por separado; este compose es exclusivamente el de entrega/demo full-stack.
+Con el stack arriba, la aplicación completa queda disponible en `http://localhost`. El mismo `docker-compose.yml` de la raíz define además un servicio `db_test`, usado solo por la suite de tests del backend (ver `backend/README.md`) — no es necesario para levantar la aplicación.
 
 ## Estructura de carpetas
 

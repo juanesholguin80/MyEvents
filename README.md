@@ -9,20 +9,18 @@ Este repositorio contiene backend y frontend en carpetas separadas, cada una con
 
 ## Cómo levantar el proyecto
 
-**Opción recomendada — todo el stack con un solo comando** (base de datos + backend + frontend, vía Nginx como reverse proxy):
+Hay un único `docker-compose.yml`, en la raíz del repositorio, que orquesta los tres servicios pedidos por el enunciado (base de datos, backend y frontend):
 
 ```bash
-cd frontend
 docker compose up --build
 ```
 
 Esto expone el frontend en `http://localhost` (que internamente llama al backend a través de Nginx) y el backend directamente en `http://localhost:8000` (Swagger en `http://localhost:8000/docs`). Las migraciones de base de datos se aplican automáticamente al arrancar — no se necesita ningún paso manual.
 
-**Alternativa — solo backend** (API + Postgres, sin frontend, útil para desarrollo/pruebas de la API):
+**Alternativa — solo backend** (API + Postgres, sin frontend, útil para desarrollo/pruebas de la API), con el mismo archivo pero indicando qué servicios levantar:
 
 ```bash
-cd backend
-docker compose up --build
+docker compose up --build backend db
 ```
 
 Ver el README de cada carpeta para detalles de variables de entorno, datos de ejemplo (seed), tests y cobertura.
