@@ -1,0 +1,62 @@
+import { lazy } from "react";
+import { createBrowserRouter } from "react-router-dom";
+import { RootLayout } from "@/app/RootLayout";
+import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
+import { RoleGuard } from "@/components/layout/RoleGuard";
+
+// Cada entrada usa React.lazy: code-splitting real por ruta (bonus "Lazy
+// loading de rutas"), con <PageSkeleton /> como fallback compartido desde
+// RootLayout.
+const EventsListPage = lazy(() => import("@/pages/EventsListPage"));
+const EventDetailPage = lazy(() => import("@/pages/EventDetailPage"));
+// EventFormPage resuelve crear/editar por sí mismo (ver EventFormPage.tsx);
+// /events/new y /events/:id/edit comparten el mismo chunk perezoso.
+const EventFormPage = lazy(() => import("@/pages/EventFormPage"));
+// LoginPage/RegisterPage ya existían desde Fase 2 pero nunca se conectaron
+// a un router real; se conectan ahora junto con la infraestructura de rutas.
+const LoginPage = lazy(() => import("@/pages/LoginPage"));
+const RegisterPage = lazy(() => import("@/pages/RegisterPage"));
+// ProfilePage llega en Fase 6: la Navbar ya enlazaba a /profile desde la
+// Fase 2, pero la ruta no existía todavía.
+const ProfilePage = lazy(() => import("@/pages/ProfilePage"));
+// AdminUsersPage llega en Fase 7 (bonus): la Navbar ya enlazaba a
+// /admin/users desde la Fase 2, pero la ruta no existía todavía (caía en el
+// catch-all de NotFoundPage).
+const AdminUsersPage = lazy(() => import("@/pages/AdminUsersPage"));
+const NotFoundPage = lazy(() => import("@/pages/NotFoundPage"));
+
+export const router = createBrowserRouter([
+  {
+    element: <RootLayout />,
+    children: [
+      { path: "/", element: <EventsListPage /> },
+      { path: "/events/:id", element: <EventDetailPage /> },
+      {
+        // RoleGuard ya hace el check de autenticación + rol (§3 del plan).
+        // El check fino de "dueño del evento concreto" para /events/:id/edit
+        // vive dentro de EventFormPage, que ya tiene los datos del evento
+        // cargados (defensa en profundidad, no se puede resolver aquí sin
+        // duplicar la query).
+        element: <RoleGuard roles={["organizador", "admin"]} />,
+        children: [
+          { path: "/events/new", element: <EventFormPage /> },
+          { path: "/events/:id/edit", element: <EventFormPage /> },
+        ],
+      },
+      { path: "/login", element: <LoginPage /> },
+      { path: "/register", element: <RegisterPage /> },
+      {
+        // ProtectedRoute: cualquier autenticado (§3 del plan) — a
+        // diferencia de RoleGuard, no restringe por rol.
+        element: <ProtectedRoute />,
+        children: [{ path: "/profile", element: <ProfilePage /> }],
+      },
+      {
+        // Bonus (Fase 7, §2.4/§3 del plan): /admin/users solo para admin.
+        element: <RoleGuard roles={["admin"]} />,
+        children: [{ path: "/admin/users", element: <AdminUsersPage /> }],
+      },
+      { path: "*", element: <NotFoundPage /> },
+    ],
+  },
+]);
