@@ -19,6 +19,10 @@ const RegisterPage = lazy(() => import("@/pages/RegisterPage"));
 // ProfilePage llega en Fase 6: la Navbar ya enlazaba a /profile desde la
 // Fase 2, pero la ruta no existía todavía.
 const ProfilePage = lazy(() => import("@/pages/ProfilePage"));
+// AdminUsersPage llega en Fase 7 (bonus): la Navbar ya enlazaba a
+// /admin/users desde la Fase 2, pero la ruta no existía todavía (caía en el
+// catch-all de NotFoundPage).
+const AdminUsersPage = lazy(() => import("@/pages/AdminUsersPage"));
 const NotFoundPage = lazy(() => import("@/pages/NotFoundPage"));
 
 export const router = createBrowserRouter([
@@ -46,6 +50,11 @@ export const router = createBrowserRouter([
         // diferencia de RoleGuard, no restringe por rol.
         element: <ProtectedRoute />,
         children: [{ path: "/profile", element: <ProfilePage /> }],
+      },
+      {
+        // Bonus (Fase 7, §2.4/§3 del plan): /admin/users solo para admin.
+        element: <RoleGuard roles={["admin"]} />,
+        children: [{ path: "/admin/users", element: <AdminUsersPage /> }],
       },
       { path: "*", element: <NotFoundPage /> },
     ],
