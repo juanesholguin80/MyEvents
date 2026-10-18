@@ -7,6 +7,7 @@ import Users from "lucide-react/dist/esm/icons/users";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { EventActions } from "@/components/events/EventActions";
+import { EventRegistrationAction } from "@/components/events/EventRegistrationAction";
 import { EventStatusBadge } from "@/components/events/EventStatusBadge";
 import { SessionFormDialog } from "@/components/sessions/SessionFormDialog";
 import { SessionList } from "@/components/sessions/SessionList";
@@ -133,12 +134,13 @@ export default function EventDetailPage() {
           </p>
           {/* Botones de gestión (editar/publicar/cancelar/finalizar/borrar):
              EventActions se auto-protege con isOwnerOrAdmin, así que se
-             monta incondicionalmente. El registro de asistentes llega en
-             Fase 6 — se deja el placeholder tal como en Fase 3. */}
+             monta incondicionalmente. */}
           <EventActions event={eventQuery.data} />
-          <p className="text-sm italic text-gray-500">
-            El registro de asistentes a este evento estará disponible próximamente.
-          </p>
+          {/* Registro de asistentes (§6 del plan): EventRegistrationAction
+             resuelve sus 4 estados internamente (no autenticado/registrarme/
+             cancelar/evento no publicado), así que también se monta
+             incondicionalmente. */}
+          <EventRegistrationAction event={eventQuery.data} />
         </section>
       ) : null}
 

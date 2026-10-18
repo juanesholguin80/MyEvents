@@ -1,6 +1,7 @@
 import { lazy } from "react";
 import { createBrowserRouter } from "react-router-dom";
 import { RootLayout } from "@/app/RootLayout";
+import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { RoleGuard } from "@/components/layout/RoleGuard";
 
 // Cada entrada usa React.lazy: code-splitting real por ruta (bonus "Lazy
@@ -15,6 +16,9 @@ const EventFormPage = lazy(() => import("@/pages/EventFormPage"));
 // a un router real; se conectan ahora junto con la infraestructura de rutas.
 const LoginPage = lazy(() => import("@/pages/LoginPage"));
 const RegisterPage = lazy(() => import("@/pages/RegisterPage"));
+// ProfilePage llega en Fase 6: la Navbar ya enlazaba a /profile desde la
+// Fase 2, pero la ruta no existía todavía.
+const ProfilePage = lazy(() => import("@/pages/ProfilePage"));
 const NotFoundPage = lazy(() => import("@/pages/NotFoundPage"));
 
 export const router = createBrowserRouter([
@@ -37,6 +41,12 @@ export const router = createBrowserRouter([
       },
       { path: "/login", element: <LoginPage /> },
       { path: "/register", element: <RegisterPage /> },
+      {
+        // ProtectedRoute: cualquier autenticado (§3 del plan) — a
+        // diferencia de RoleGuard, no restringe por rol.
+        element: <ProtectedRoute />,
+        children: [{ path: "/profile", element: <ProfilePage /> }],
+      },
       { path: "*", element: <NotFoundPage /> },
     ],
   },

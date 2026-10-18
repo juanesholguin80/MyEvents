@@ -54,4 +54,12 @@ describe("EventDetailPage", () => {
 
     expect(await screen.findByText(/404/)).toBeInTheDocument();
   });
+
+  it("muestra el CTA de registro de asistentes (EventRegistrationAction) para un visitante anónimo en un evento publicado", async () => {
+    renderPage("1");
+
+    expect(
+      await screen.findByRole("link", { name: /inicia sesión para registrarte/i }),
+    ).toHaveAttribute("href", "/login?redirect=%2Fevents%2F1");
+  });
 });
