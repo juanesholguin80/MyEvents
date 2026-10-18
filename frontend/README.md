@@ -15,23 +15,17 @@ SPA de React + TypeScript para la plataforma de gestión de eventos "Mis Eventos
 - **Vitest + React Testing Library + MSW** para testing (MSW intercepta HTTP real contra el mismo contrato JSON/códigos que expone el backend, sin necesidad de levantar Postgres).
 - **ESLint + Prettier** para linting y formato.
 
-## Clonar junto al backend
+## Ubicación dentro del repositorio
 
-Este repo contiene **solo el frontend**. El backend vive en un repo separado: [`MyEventosBack`](https://github.com/juanesholguin80/MyEventosBack). Varias cosas de este proyecto (el `docker-compose.yml` de la sección "Docker y despliegue", y el proxy de desarrollo de Vite) asumen que ambos repos están clonados como **carpetas hermanas**, con esos nombres exactos:
-
-```bash
-mkdir mis-eventos && cd mis-eventos
-git clone https://github.com/juanesholguin80/MyEventosBack.git backend
-git clone https://github.com/juanesholguin80/MyEventosFront.git frontend
-```
-
-Quedando:
+Este proyecto es parte de un repositorio único que contiene backend y frontend en carpetas separadas (ver el [README raíz](../README.md)):
 
 ```
-mis-eventos/
-├── backend/   (MyEventosBack)
-└── frontend/  (este repo)
+mis-eventos/        (raíz del repo)
+├── backend/         # API REST (FastAPI)
+└── frontend/         # este proyecto
 ```
+
+El `docker-compose.yml` de esta carpeta y el proxy de desarrollo de Vite asumen justamente esa estructura (`backend/` y `frontend/` como carpetas hermanas dentro del mismo repo) — no se necesita clonar nada por separado.
 
 ## Requisitos previos
 
@@ -112,7 +106,7 @@ El frontend se empaqueta con un `Dockerfile` multi-stage:
 
 ### Levantar el stack completo (backend + frontend + base de datos)
 
-Existe un `docker-compose.yml` **dentro de esta misma carpeta** que orquesta los tres servicios pedidos por el enunciado en un solo comando (todo el entregable del frontend queda autocontenido en `frontend/`, sin archivos sueltos a nivel de repo):
+Existe un `docker-compose.yml` dentro de esta carpeta que orquesta los tres servicios pedidos por el enunciado (base de datos, backend y frontend) en un solo comando. Es el compose recomendado para levantar la aplicación completa — ver también el [README raíz](../README.md):
 
 ```bash
 # desde frontend/
