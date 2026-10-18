@@ -31,15 +31,9 @@ API REST para gestión de eventos ("Mis Eventos"), construida con FastAPI. Prueb
    docker-compose up --build
    ```
 
-   Esto levanta tres servicios: `backend` (puerto `8000`), `db` (Postgres, puerto `5432`, para desarrollo) y `db_test` (Postgres, puerto `5433`, solo para la suite de tests — ver [Tests](#tests-y-cobertura)). El `backend` espera a que `db` esté `healthy` antes de arrancar.
+   Esto levanta tres servicios: `backend` (puerto `8000`), `db` (Postgres, puerto `5432`, para desarrollo) y `db_test` (Postgres, puerto `5433`, solo para la suite de tests — ver [Tests](#tests-y-cobertura)). El `backend` espera a que `db` esté `healthy` antes de arrancar, y su `CMD` corre `alembic upgrade head` automáticamente antes de iniciar `uvicorn` — no se necesita ningún paso manual de migración contra una base nueva.
 
-3. Aplica las migraciones (la base de datos arranca vacía):
-
-   ```bash
-   docker compose exec backend alembic upgrade head
-   ```
-
-4. Verifica que la API responde:
+3. Verifica que la API responde:
 
    ```bash
    curl http://localhost:8000/health
