@@ -15,6 +15,24 @@ SPA de React + TypeScript para la plataforma de gestión de eventos "Mis Eventos
 - **Vitest + React Testing Library + MSW** para testing (MSW intercepta HTTP real contra el mismo contrato JSON/códigos que expone el backend, sin necesidad de levantar Postgres).
 - **ESLint + Prettier** para linting y formato.
 
+## Clonar junto al backend
+
+Este repo contiene **solo el frontend**. El backend vive en un repo separado: [`MyEventosBack`](https://github.com/juanesholguin80/MyEventosBack). Varias cosas de este proyecto (el `docker-compose.yml` de la sección "Docker y despliegue", y el proxy de desarrollo de Vite) asumen que ambos repos están clonados como **carpetas hermanas**, con esos nombres exactos:
+
+```bash
+mkdir mis-eventos && cd mis-eventos
+git clone https://github.com/juanesholguin80/MyEventosBack.git backend
+git clone https://github.com/juanesholguin80/MyEventosFront.git frontend
+```
+
+Quedando:
+
+```
+mis-eventos/
+├── backend/   (MyEventosBack)
+└── frontend/  (este repo)
+```
+
 ## Requisitos previos
 
 - Node.js 20.x (recomendado usar la misma versión que corre en el contenedor de producción, ver `Dockerfile`).
@@ -94,20 +112,20 @@ El frontend se empaqueta con un `Dockerfile` multi-stage:
 
 ### Levantar el stack completo (backend + frontend + base de datos)
 
-Existe un `docker-compose.yml` **en la raíz del repositorio** (un nivel arriba de esta carpeta, fuera tanto de `frontend/` como de `backend/`) que orquesta los tres servicios pedidos por el enunciado en un solo comando:
+Existe un `docker-compose.yml` **dentro de esta misma carpeta** que orquesta los tres servicios pedidos por el enunciado en un solo comando (todo el entregable del frontend queda autocontenido en `frontend/`, sin archivos sueltos a nivel de repo):
 
 ```bash
-# desde la raíz del repositorio, no desde frontend/
+# desde frontend/
 docker compose up --build
 ```
 
 Esto levanta:
 
 - `db` (Postgres 16), reutilizando la misma definición ya verificada del `docker-compose.yml` propio de `backend/` (mismas variables de entorno, mismo healthcheck vía `pg_isready`).
-- `backend`, construido desde `./backend` con el `Dockerfile` ya existente de esa carpeta (sin modificarlo), con un healthcheck propio definido en el compose raíz contra `GET /health` (ya expuesto por el backend sin el prefijo `/api/v1`).
-- `frontend` (esta carpeta), construido con el `Dockerfile` descrito arriba, expuesto en el puerto `80`, que solo arranca una vez que `backend` reporta estar saludable (`depends_on: backend: condition: service_healthy`).
+- `backend`, construido con contexto `../backend` (un nivel arriba) usando el `Dockerfile` ya existente de esa carpeta — solo se **lee** para construir la imagen, no se modifica ni se copia nada hacia `frontend/` —, con un healthcheck propio definido en este compose contra `GET /health` (ya expuesto por el backend sin el prefijo `/api/v1`).
+- `frontend` (esta carpeta, contexto `.`), construido con el `Dockerfile` descrito arriba, expuesto en el puerto `80`, que solo arranca una vez que `backend` reporta estar saludable (`depends_on: backend: condition: service_healthy`).
 
-Con el stack arriba, la aplicación completa queda disponible en `http://localhost`. El `docker-compose.yml` propio de `backend/` (que además incluye un servicio `db_test` para el flujo de tests aislado del backend) se mantiene intacto y sigue siendo el que se usa para desarrollar/testear el backend por separado; el compose de la raíz es exclusivamente el de entrega/demo full-stack.
+Con el stack arriba, la aplicación completa queda disponible en `http://localhost`. El `docker-compose.yml` propio de `backend/` (que además incluye un servicio `db_test` para el flujo de tests aislado del backend) se mantiene intacto y sigue siendo el que se usa para desarrollar/testear el backend por separado; este compose es exclusivamente el de entrega/demo full-stack.
 
 ## Estructura de carpetas
 
