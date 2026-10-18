@@ -3,5 +3,5 @@ repos:
     rev: 7.1.1
     hooks:
       - id: flake8
-        args: ["--config=.flake8"]
-        exclude: ^alembic/
+        args: ["--config=backend/.flake8"]
+        exclude: ^backend/alembic/
