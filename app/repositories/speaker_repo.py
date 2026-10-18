@@ -40,7 +40,7 @@ def list_with_filters(
     if full_name is not None:
         statement = statement.where(Speaker.full_name.ilike(f"%{full_name}%"))
 
-    statement = statement.offset(offset).limit(limit)
+    statement = statement.order_by(Speaker.id).offset(offset).limit(limit)
 
     return session.exec(statement).all()
 

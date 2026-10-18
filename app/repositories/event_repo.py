@@ -77,7 +77,7 @@ def list_with_filters(
     statement = _apply_search_filters(
         statement, name, status, date_from, date_to, viewer_id, is_admin
     )
-    statement = statement.offset(offset).limit(limit)
+    statement = statement.order_by(Event.id).offset(offset).limit(limit)
     return session.exec(statement).all()
 
 

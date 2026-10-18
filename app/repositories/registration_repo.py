@@ -37,6 +37,7 @@ def list_by_user(
     statement = (
         select(Registration)
         .where(Registration.user_id == user_id)
+        .order_by(Registration.id)
         .offset(offset)
         .limit(limit)
     )

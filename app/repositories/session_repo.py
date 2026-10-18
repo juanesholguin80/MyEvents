@@ -38,6 +38,7 @@ def list_by_event(
     statement = (
         select(SessionModel)
         .where(SessionModel.event_id == event_id)
+        .order_by(SessionModel.id)
         .offset(offset)
         .limit(limit)
     )
