@@ -7,11 +7,6 @@ export interface SessionListParams {
   page_size?: number;
 }
 
-/**
- * Fase 3 solo necesita la lectura paginada de sesiones de un evento
- * (GET /events/{event_id}/sessions). El resto de api.ts de sesiones
- * (crear/editar/borrar) se agrega en Fase 5.
- */
 export async function listSessionsByEvent(
   eventId: number,
   params: SessionListParams = {},
@@ -21,4 +16,41 @@ export async function listSessionsByEvent(
     { params: { page: params.page ?? 1, page_size: params.page_size ?? 10 } },
   );
   return data;
+}
+
+// Espejo de `SessionCreate` (app/schemas/session.py, §2.4 del plan).
+export interface SessionCreateInput {
+  speaker_id: number;
+  title: string;
+  description?: string | null;
+  start_time: string;
+  end_time: string;
+  capacity: number;
+}
+
+// Espejo de `SessionUpdate` (todos los campos opcionales, PUT parcial).
+export type SessionUpdateInput = Partial<SessionCreateInput>;
+
+export async function createSession(
+  eventId: number,
+  input: SessionCreateInput,
+): Promise<SessionRead> {
+  const { data } = await http.post<SessionRead>(`/events/${eventId}/sessions`, input);
+  return data;
+}
+
+export async function updateSession(
+  eventId: number,
+  sessionId: number,
+  input: SessionUpdateInput,
+): Promise<SessionRead> {
+  const { data } = await http.put<SessionRead>(
+    `/events/${eventId}/sessions/${sessionId}`,
+    input,
+  );
+  return data;
+}
+
+export async function deleteSession(eventId: number, sessionId: number): Promise<void> {
+  await http.delete(`/events/${eventId}/sessions/${sessionId}`);
 }
